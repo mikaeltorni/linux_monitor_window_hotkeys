@@ -1,8 +1,8 @@
 {
   "uuid": "monitor-window-hotkeys@local",
   "name": "Monitor Window Hotkeys",
-  "description": "Move the focused window to a numbered monitor and tile it with local hotkeys",
+  "description": "Move the focused window to a numbered monitor, tile it to screen halves, and send it to a workspace with local hotkeys",
   "settings-schema": "org.gnome.shell.extensions.monitor-window-hotkeys",
   "shell-version": ["45", "46", "47", "48", "49", "50"],
-  "version": 11
+  "version": 12
 }

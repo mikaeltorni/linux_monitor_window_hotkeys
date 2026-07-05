@@ -21,8 +21,8 @@ def test_metadata_identity_and_schema():
     meta = json.loads((ROOT / "metadata.json").read_text(encoding="utf-8"))
     assert meta["uuid"] == "monitor-window-hotkeys@local"
     assert meta["settings-schema"] == "org.gnome.shell.extensions.monitor-window-hotkeys"
-    # Ships the newest, cleanest version (v11 split-out core).
-    assert meta["version"] >= 11
+    # Ships the v11 split-out core plus the merged workspace send-mode (v12+).
+    assert meta["version"] >= 12
     assert "46" in meta["shell-version"]
 
 
@@ -42,20 +42,34 @@ def test_extension_provides_monitor_move_tiling_and_dbus():
     assert "TileRightHalf" in js  # D-Bus method used by the Ctrl+Back tiler
 
 
-def test_extension_is_the_clean_split_out_version():
-    """Drag/resize (linux_hotkey_window_tools) and legacy send-to-workspace must
-    not have leaked back into this extension."""
+def test_pointer_drag_and_resize_do_not_leak_back_in():
+    """Pointer drag/resize belong to linux_hotkey_window_tools and must not
+    reappear here (they duplicate window-move-resize@local and double-fire)."""
     js = EXTENSION_JS.read_text(encoding="utf-8")
     schema = SCHEMA.read_text(encoding="utf-8")
     for forbidden in (
         "drag-active-window-with-pointer",
         "scale-active-window-from-center",
         "resize-active-window",
-        "send-active-window-to-workspace",
-        "send-window-to-workspace-mode",
+        "startPointerDrag",
+        "resizeFocusedWindow",
     ):
         assert forbidden not in js, f"{forbidden} leaked into extension.js"
         assert forbidden not in schema, f"{forbidden} leaked into the schema"
+
+
+def test_workspace_send_mode_is_present():
+    """The unique workspace send-mode merged in from workspaces_setup must be
+    present (JS handlers + schema keys) so full functionality is preserved."""
+    js = EXTENSION_JS.read_text(encoding="utf-8")
+    schema = SCHEMA.read_text(encoding="utf-8")
+    assert "handleWorkspaceSendModeEvent" in js
+    assert "startWorkspaceSendMode" in js
+    assert "sendFocusedWindowToWorkspace" in js
+    assert 'name="send-window-to-workspace-mode"' in schema
+    assert 'name="send-mode-workspace-bindings"' in schema
+    for n in range(1, 9):
+        assert f'name="send-active-window-to-workspace-{n}"' in schema
 
 
 def test_apply_bindings_references_deployed_strv_helper():
