@@ -23,6 +23,12 @@
 #   detect_monitor_window_hotkeys          - true when the extension is installed.
 #   uninstall_monitor_window_hotkeys       - remove the extension and disable it.
 
+# Default the target user/home at source time so the side-effect-free probe
+# modes (--detect / --uninstall via component_main) work under `set -u` without
+# install.sh's initialize_target_user having run first.
+: "${TARGET_USER:=${SUDO_USER:-${USER:-$(id -un)}}}"
+: "${TARGET_HOME:=$(getent passwd "$TARGET_USER" | cut -d: -f6)}"
+
 EXTENSION_ID="monitor-window-hotkeys@local"
 SCHEMA_ID="org.gnome.shell.extensions.monitor-window-hotkeys"
 GSCHEMA_FILE="org.gnome.shell.extensions.monitor-window-hotkeys.gschema.xml"
