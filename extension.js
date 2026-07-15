@@ -681,31 +681,31 @@ export default class MonitorWindowHotkeysExtension extends Extension {
     this._keybindings.push('tile-active-window-right-half');
 
     Main.wm.addKeybinding(
-      'tile-top-half',
+      'tile-active-window-top-half',
       this._settings,
       Meta.KeyBindingFlags.NONE,
       Shell.ActionMode.NORMAL,
       () => tileFocusedWindowTopHalf(),
     );
-    this._keybindings.push('tile-top-half');
+    this._keybindings.push('tile-active-window-top-half');
 
     Main.wm.addKeybinding(
-      'tile-bottom-half',
+      'tile-active-window-bottom-half',
       this._settings,
       Meta.KeyBindingFlags.NONE,
       Shell.ActionMode.NORMAL,
       () => tileFocusedWindowBottomHalf(),
     );
-    this._keybindings.push('tile-bottom-half');
+    this._keybindings.push('tile-active-window-bottom-half');
 
     Main.wm.addKeybinding(
-      'tile-left-half',
+      'tile-active-window-left-half',
       this._settings,
       Meta.KeyBindingFlags.NONE,
       Shell.ActionMode.NORMAL,
       () => tileFocusedWindowLeftHalf(),
     );
-    this._keybindings.push('tile-left-half');
+    this._keybindings.push('tile-active-window-left-half');
 
     Main.wm.addKeybinding(
       WORKSPACE_SEND_MODE_KEY,
