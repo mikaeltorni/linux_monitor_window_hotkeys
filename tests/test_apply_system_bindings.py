@@ -1,9 +1,10 @@
 """Behavior test for apply-system-bindings.sh against a fake gsettings.
 
-Verifies the deployed binding script frees the Super vertical arrows and the
-conflicting GNOME WM / Tiling Assistant defaults so the extension's half-tiling
-accelerators win, without touching the real session. Ported from
-linux_hotkey_setup when the extension was extracted into this repository.
+Verifies the deployed binding script frees only the Super+Up conflicts the
+extension still owns for top-half tiling, without stripping Super+Down or
+Super+Left from GNOME WM / Tiling Assistant defaults the extension no longer
+claims. Ported from linux_hotkey_setup when the extension was extracted into
+this repository.
 """
 
 from __future__ import annotations
@@ -18,8 +19,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def test_apply_system_bindings_reassigns_super_vertical_arrows_to_half_tiling():
-    """System binding application should free Super+Up/Down for top/bottom tiling."""
+def test_apply_system_bindings_frees_super_up_only_for_top_half_tiling():
+    """System binding application should free Super+Up but leave other arrows."""
     script_path = ROOT / "apply-system-bindings.sh"
 
     with tempfile.TemporaryDirectory() as td:
@@ -46,8 +47,8 @@ DEFAULTS = {
     ("org.gnome.shell", "enabled-extensions"): "[]",
     ("org.gnome.shell.extensions.tiling-assistant", "tile-maximize"): "['<Super>Up', '<Super>KP_5']",
     ("org.gnome.shell.extensions.tiling-assistant", "tile-top-half"): "[]",
-    ("org.gnome.shell.extensions.tiling-assistant", "tile-bottom-half"): "[]",
-    ("org.gnome.shell.extensions.tiling-assistant", "tile-left-half"): "[]",
+    ("org.gnome.shell.extensions.tiling-assistant", "tile-bottom-half"): "['<Super>Down']",
+    ("org.gnome.shell.extensions.tiling-assistant", "tile-left-half"): "['<Super>Left']",
     ("org.gnome.shell.extensions.tiling-assistant", "tile-right-half"): "[]",
 }
 
@@ -130,34 +131,46 @@ raise SystemExit(f"unsupported fake gsettings args: {args}")
             if line.strip()
         ]
 
-    def latest_value(schema: str, key: str) -> str:
+    def latest_value(schema: str, key: str) -> str | None:
         """Return the last fake GSettings value written for a schema/key pair."""
         matches = [
             entry["value"]
             for entry in entries
             if entry.get("cmd") == "set" and entry.get("schema") == schema and entry.get("key") == key
         ]
-        assert matches, f"No GSettings set recorded for {schema} {key}"
-        return matches[-1]
+        return matches[-1] if matches else None
 
-    assert "<Super>Up" not in ast.literal_eval(
-        latest_value("org.gnome.desktop.wm.keybindings", "maximize")
+    def effective_value(schema: str, key: str, default: str) -> list[str]:
+        """Resolve the binding list after the script run (set value or default)."""
+        written = latest_value(schema, key)
+        return ast.literal_eval(written if written is not None else default)
+
+    # Super+Up conflicts are cleared for extension-owned top-half tiling.
+    assert "<Super>Up" not in effective_value(
+        "org.gnome.desktop.wm.keybindings", "maximize", "['<Super>Up', '<Alt>F10']"
     )
-    assert "<Super>Down" not in ast.literal_eval(
-        latest_value("org.gnome.desktop.wm.keybindings", "unmaximize")
-    )
-    assert "<Super>Down" not in ast.literal_eval(
-        latest_value("org.gnome.desktop.wm.keybindings", "minimize")
-    )
-    maximize_bindings = ast.literal_eval(
-        latest_value("org.gnome.shell.extensions.tiling-assistant", "tile-maximize")
+    maximize_bindings = effective_value(
+        "org.gnome.shell.extensions.tiling-assistant",
+        "tile-maximize",
+        "['<Super>Up', '<Super>KP_5']",
     )
     assert "<Super>Up" not in maximize_bindings
     assert "<Super>KP_5" in maximize_bindings
-    schema = (
-        ROOT / "schemas" / "org.gnome.shell.extensions.monitor-window-hotkeys.gschema.xml"
-    ).read_text(encoding="utf-8")
-    assert "&lt;Super&gt;Up', '&lt;Control&gt;&lt;Super&gt;X" in schema
-    assert "<Super>Down" not in ast.literal_eval(
-        latest_value("org.gnome.shell.extensions.tiling-assistant", "tile-bottom-half")
+
+    # Super+Down / Super+Left are no longer stripped — WM and Tiling Assistant keep them.
+    assert "<Super>Down" in effective_value(
+        "org.gnome.desktop.wm.keybindings", "unmaximize", "['<Super>Down', '<Alt>F5']"
+    )
+    assert "<Super>Down" in effective_value(
+        "org.gnome.desktop.wm.keybindings", "minimize", "['<Super>Down', '<Alt><Super>R']"
+    )
+    assert "<Super>Down" in effective_value(
+        "org.gnome.shell.extensions.tiling-assistant",
+        "tile-bottom-half",
+        "['<Super>Down']",
+    )
+    assert "<Super>Left" in effective_value(
+        "org.gnome.shell.extensions.tiling-assistant",
+        "tile-left-half",
+        "['<Super>Left']",
     )

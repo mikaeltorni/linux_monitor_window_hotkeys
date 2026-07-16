@@ -70,9 +70,13 @@ defaults.
 | Move window to monitor 3 | `Alt+Super+C` |
 | Move window to monitor 4 | *(unset — assign your own)* |
 | Tile top half | `Super+Up`, `Ctrl+Super+X` |
-| Tile bottom half | `Ctrl+Super+W`, `Super+Down` |
-| Tile left half | `Ctrl+Super+C`, `Super+Left` |
+| Tile bottom half | `Ctrl+Super+W` |
+| Tile left half | `Ctrl+Super+C` |
 | Tile right half | `Ctrl+Super+Right` |
+
+Among arrow keys, only `Super+Up` tiles by default (top half). Bottom, left, and
+right halves use the `Ctrl+Super` letter bindings above; the Ctrl+Back mouse
+tiler in `linux_hotkey_setup` can also trigger right-half tiling via D-Bus.
 
 ## Component contract
 
