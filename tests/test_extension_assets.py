@@ -30,9 +30,10 @@ def test_schema_declares_monitor_move_and_tiling_keys():
     schema = SCHEMA.read_text(encoding="utf-8")
     for n in range(1, 7):
         assert f'name="move-active-window-to-monitor-{n}"' in schema
-    for edge in ("top", "bottom", "left"):
-        assert f'name="tile-{edge}-half"' in schema
-    assert 'name="tile-active-window-right-half"' in schema
+    # Names are prefixed to avoid colliding with Tiling Assistant's
+    # tile-*-half keybinding names (GNOME refuses duplicate names).
+    for edge in ("top", "bottom", "left", "right"):
+        assert f'name="tile-active-window-{edge}-half"' in schema
 
 
 def test_extension_provides_monitor_move_tiling_and_dbus():
