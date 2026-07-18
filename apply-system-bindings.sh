@@ -4,7 +4,7 @@
 #
 # Compiles the bundled schema, resets the extension's own keys to their schema
 # defaults, removes conflicting GNOME WM and Tiling Assistant bindings for keys
-# the extension still owns (chiefly <Super>Up for top-half tiling),
+# the extension still owns (<Super>Up/Down for vertical half-tiling),
 # sets the Super mouse-button modifier, and enables both this extension and the
 # Tiling Assistant. Run as the target user; takes no arguments.
 set -euo pipefail
@@ -22,6 +22,8 @@ WM_BINDINGS=()
 WM_UNBINDINGS=(
   "minimize:<Alt><Super>R"
   "maximize:<Super>Up"
+  "unmaximize:<Super>Down"
+  "minimize:<Super>Down"
 )
 
 TILING_UNBINDINGS=(
@@ -29,6 +31,7 @@ TILING_UNBINDINGS=(
   "tile-top-half:<Control><Super>X"
   "tile-top-half:<Super>Up"
   "tile-bottom-half:<Control><Super>W"
+  "tile-bottom-half:<Super>Down"
   "tile-left-half:<Control><Super>C"
   "tile-right-half:<Super>Right"
 )

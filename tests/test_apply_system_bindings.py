@@ -1,10 +1,8 @@
 """Behavior test for apply-system-bindings.sh against a fake gsettings.
 
-Verifies the deployed binding script frees only the Super+Up conflicts the
-extension still owns for top-half tiling, without stripping Super+Down or
-Super+Left from GNOME WM / Tiling Assistant defaults the extension no longer
-claims. Ported from linux_hotkey_setup when the extension was extracted into
-this repository.
+Verifies the deployed binding script frees the Super+Up and Super+Down
+conflicts needed by the extension's top- and bottom-half tiling. Ported from
+linux_hotkey_setup when the extension was extracted into this repository.
 """
 
 from __future__ import annotations
@@ -19,8 +17,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def test_apply_system_bindings_frees_super_up_only_for_top_half_tiling():
-    """System binding application should free Super+Up but leave other arrows."""
+def test_apply_system_bindings_frees_super_up_and_down_for_half_tiling():
+    """System binding application should free Super+Up and Super+Down."""
     script_path = ROOT / "apply-system-bindings.sh"
 
     with tempfile.TemporaryDirectory() as td:
@@ -157,14 +155,14 @@ raise SystemExit(f"unsupported fake gsettings args: {args}")
     assert "<Super>Up" not in maximize_bindings
     assert "<Super>KP_5" in maximize_bindings
 
-    # Super+Down / Super+Left are no longer stripped — WM and Tiling Assistant keep them.
-    assert "<Super>Down" in effective_value(
+    # Super+Down conflicts are cleared for extension-owned bottom-half tiling.
+    assert "<Super>Down" not in effective_value(
         "org.gnome.desktop.wm.keybindings", "unmaximize", "['<Super>Down', '<Alt>F5']"
     )
-    assert "<Super>Down" in effective_value(
+    assert "<Super>Down" not in effective_value(
         "org.gnome.desktop.wm.keybindings", "minimize", "['<Super>Down', '<Alt><Super>R']"
     )
-    assert "<Super>Down" in effective_value(
+    assert "<Super>Down" not in effective_value(
         "org.gnome.shell.extensions.tiling-assistant",
         "tile-bottom-half",
         "['<Super>Down']",
