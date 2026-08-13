@@ -60,6 +60,8 @@ fi
 isc_load_helpers
 isc_activate_components
 
+# shellcheck source=lib/mwh_bin.sh
+source "$SCRIPT_DIR/lib/mwh_bin.sh"
 # shellcheck source=lib/monitor_hotkeys.sh
 source "$SCRIPT_DIR/lib/monitor_hotkeys.sh"
 # shellcheck source=installer/components.sh

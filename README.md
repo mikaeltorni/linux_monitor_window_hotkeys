@@ -94,6 +94,7 @@ bash install.sh --uninstall monitor_window_hotkeys
 ## Tests
 
 ```bash
+cargo test
 python3 -m pytest tests/ -q
 ```
 
@@ -105,7 +106,7 @@ python3 -m pytest tests/ -q
 ├── extension.js                       # GNOME Shell extension (monitor-move + tiling + D-Bus)
 ├── metadata.json
 ├── apply-system-bindings.sh           # deployed: reset keys, drop conflicts, enable
-├── gsettings-strv.py                  # deployed: gsettings string-array helper
+├── src/                               # Rust gsettings-strv helper (built to dist/)
 ├── schemas/…monitor-window-hotkeys.gschema.xml
 ├── lib/
 │   ├── bash_logging.sh                # centralized best-effort install logging
