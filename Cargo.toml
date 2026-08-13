@@ -1,0 +1,11 @@
+[package]
+name = "gsettings-strv"
+version = "0.1.0"
+edition = "2021"
+description = "GSettings string-array helper for monitor-window-hotkeys"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "gsettings-strv"
+path = "src/main.rs"

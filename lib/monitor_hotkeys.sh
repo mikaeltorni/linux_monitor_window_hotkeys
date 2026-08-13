@@ -35,7 +35,7 @@ GSCHEMA_FILE="org.gnome.shell.extensions.monitor-window-hotkeys.gschema.xml"
 
 # Directory holding this library; its parent is the repository root that ships
 # the deployable extension bundle (extension.js, metadata.json,
-# apply-system-bindings.sh, gsettings-strv.py, schemas/).
+# apply-system-bindings.sh, gsettings-strv, schemas/).
 MONITOR_HOTKEYS_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MONITOR_HOTKEYS_REPO_DIR="$(cd "$MONITOR_HOTKEYS_LIB_DIR/.." && pwd)"
 
@@ -106,12 +106,14 @@ install_monitor_extension_core() {
     install -d "$ext_dir/schemas"
   fi
 
+  ensure_mwh_bin || return 1
   install -m 0644 \
     "$MONITOR_HOTKEYS_REPO_DIR/extension.js" \
     "$MONITOR_HOTKEYS_REPO_DIR/metadata.json" \
-    "$MONITOR_HOTKEYS_REPO_DIR/gsettings-strv.py" \
     "$ext_dir/"
   install -m 0755 "$MONITOR_HOTKEYS_REPO_DIR/apply-system-bindings.sh" "$ext_dir/"
+  install -m 0755 "$MWH_BIN" "$ext_dir/gsettings-strv"
+  rm -f "$ext_dir/gsettings-strv.py"
   install -m 0644 "$MONITOR_HOTKEYS_REPO_DIR/schemas/$GSCHEMA_FILE" "$ext_dir/schemas/"
 
   if ! need_cmd glib-compile-schemas; then
@@ -200,14 +202,15 @@ uninstall_monitor_window_hotkeys() {
 }
 
 # Drop a value from a gsettings string-array key, keeping re-runs idempotent.
-# Uses the deployed gsettings-strv.py helper when present, otherwise falls back
+# Uses the Rust gsettings-strv helper when present, otherwise falls back
 # to leaving the array untouched (best-effort).
 # Arguments: $1 - schema; $2 - key; $3 - value to remove. Returns: 0.
 remove_strv_value() {
   local schema="$1" key="$2" value="$3" current new_value helper
-  helper="$MONITOR_HOTKEYS_REPO_DIR/gsettings-strv.py"
-  [ -f "$helper" ] || return 0
+  ensure_mwh_bin || return 0
+  helper="$MWH_BIN"
+  [ -x "$helper" ] || return 0
   current="$(run_as_target gsettings get "$schema" "$key" 2>/dev/null || printf '[]')"
-  new_value="$(CURRENT="$current" python3 "$helper" remove "$value" 2>/dev/null || printf '%s' "$current")"
+  new_value="$(CURRENT="$current" "$helper" remove "$value" 2>/dev/null || printf '%s' "$current")"
   run_as_target gsettings set "$schema" "$key" "$new_value" 2>/dev/null || true
 }

@@ -65,31 +65,48 @@ extension_gsettings() {
   gsettings --schemadir "$SCHEMA_DIR" "$@"
 }
 
+# gsettings_strv_bin — Path to the Rust helper: deployed next to this script,
+# or built into dist/ when running from a checkout.
+gsettings_strv_bin() {
+  if [ -x "$EXT_DIR/gsettings-strv" ]; then
+    printf '%s\n' "$EXT_DIR/gsettings-strv"
+  elif [ -x "$EXT_DIR/dist/gsettings-strv" ]; then
+    printf '%s\n' "$EXT_DIR/dist/gsettings-strv"
+  elif [ -x "$EXT_DIR/scripts/build_gsettings_strv.sh" ]; then
+    bash "$EXT_DIR/scripts/build_gsettings_strv.sh" --print
+  else
+    printf 'ERROR: gsettings-strv helper is missing under %s\n' "$EXT_DIR" >&2
+    return 1
+  fi
+}
+
 # append_strv_value — Append a value to a string-array key, de-duplicating via
-# gsettings-strv.py so re-runs are idempotent.
+# the deployed gsettings-strv binary so re-runs are idempotent.
 # Args: $1 — schema id; $2 — key name; $3 — value to append.
 append_strv_value() {
   local schema="$1"
   local key="$2"
   local value="$3"
-  local current new_value
+  local current new_value helper
 
+  helper="$(gsettings_strv_bin)" || return 1
   current="$(gsettings get "$schema" "$key" 2>/dev/null || printf '[]')"
-  new_value="$(CURRENT="$current" python3 "$EXT_DIR/gsettings-strv.py" append "$value")"
+  new_value="$(CURRENT="$current" "$helper" append "$value")"
   gsettings set "$schema" "$key" "$new_value"
 }
 
 # remove_strv_value — Remove every occurrence of a value from a string-array key
-# via gsettings-strv.py.
+# via the deployed gsettings-strv binary.
 # Args: $1 — schema id; $2 — key name; $3 — value to remove.
 remove_strv_value() {
   local schema="$1"
   local key="$2"
   local value="$3"
-  local current new_value
+  local current new_value helper
 
+  helper="$(gsettings_strv_bin)" || return 1
   current="$(gsettings get "$schema" "$key" 2>/dev/null || printf '[]')"
-  new_value="$(CURRENT="$current" python3 "$EXT_DIR/gsettings-strv.py" remove "$value")"
+  new_value="$(CURRENT="$current" "$helper" remove "$value")"
   gsettings set "$schema" "$key" "$new_value"
 }
 
