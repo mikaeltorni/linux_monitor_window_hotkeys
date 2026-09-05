@@ -1,11 +1,10 @@
 # Clean Installation Compatibility
 
-This repository is part of the `installation_scripts` Linux setup chain. Keep
-the standalone `install.sh` idempotent and compatible with a clean checkout.
-Every deployable extension file, schema, helper, and default the feature needs
-must be represented in the installer. The installer targets the Wayland session
-and skips cleanly on X11; it must run both sudo-free and through `sudo`
-(deriving the target user from `SUDO_USER`) for the master chain.
+The `linux-configuration` skill owns the clean-install and root-optional
+installer rules; they are not restated here. Repository-specific installer
+facts:
+
+The installer targets the Wayland session and skips cleanly on X11.
 
 # Ownership: the monitor-move + tiling extension lives here only
 
