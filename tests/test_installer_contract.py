@@ -16,7 +16,12 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def _run(args, home, extra_env=None):
-    env = {"HOME": str(home), "TARGET_HOME": str(home), "PATH": "/usr/bin:/bin"}
+    common = subprocess.check_output(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=ROOT, text=True,
+    ).strip()
+    framework = Path(common).parent.parent / "linux_installation_scripts_functions"
+    env = {"ISC_FUNCTIONS_DIR": str(framework), "HOME": str(home), "TARGET_HOME": str(home), "PATH": "/usr/bin:/bin"}
     if extra_env:
         env.update(extra_env)
     return subprocess.run(
@@ -65,3 +70,30 @@ def test_lib_uses_centralized_logging_not_adhoc_helpers():
 
 def test_gitignore_excludes_log_dir():
     assert ".log/" in (ROOT / ".gitignore").read_text(encoding="utf-8")
+
+
+def test_x11_clean_home_installs_current_extension_idempotently(tmp_path):
+    """Copy real assets with desktop calls stubbed; X11 must not skip the API."""
+    script = r'''set -eu
+SCRIPT_DIR="$1"
+source "$1/lib/bash_logging.sh"
+source "$1/lib/monitor_hotkeys.sh"
+TARGET_HOME="$2"
+TARGET_USER="$(id -un)"
+SESSION_TYPE=x11
+MONITOR_HOTKEYS_REPO_DIR="$1"
+MWH_BIN=/bin/true
+is_root() { return 1; }
+msg() { :; }
+ensure_mwh_bin() { :; }
+need_cmd() { command -v "$1" >/dev/null; }
+run_as_target() { :; }
+install_monitor_extension_core
+install_monitor_extension_core
+'''
+    result = subprocess.run(["bash", "-c", script, "test", str(ROOT), str(tmp_path)],
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    installed = tmp_path / ".local/share/gnome-shell/extensions/monitor-window-hotkeys@local"
+    assert (installed / "extension.js").read_bytes() == (ROOT / "extension.js").read_bytes()
+    assert (installed / "schemas/gschemas.compiled").is_file()

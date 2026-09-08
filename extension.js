@@ -56,6 +56,10 @@ const DBUS_OBJECT_PATH = '/org/gnome/shell/extensions/monitor_window_hotkeys';
 const DBUS_INTERFACE_XML = `
 <node name="/org/gnome/shell/extensions/monitor_window_hotkeys">
   <interface name="org.gnome.shell.extensions.MonitorWindowHotkeys">
+    <method name="PerformWindowAction">
+      <arg type="s" name="windowId" direction="in"/>
+      <arg type="s" name="action" direction="in"/>
+    </method>
     <method name="TileRightHalf"/>
     <method name="TileLeftHalf"/>
     <method name="TileTopHalf"/>
@@ -107,10 +111,10 @@ function getFocusWindow() {
  * monitor index is out of range, or the window already lives on that monitor.
  *
  * @param {number} monitorIndex Zero-based index of the destination monitor.
+ * @param {Meta.Window|null} win Explicit target, defaulting to focus.
  * @returns {void}
  */
-function moveFocusedWindowToMonitor(monitorIndex) {
-  const win = getFocusWindow();
+function moveFocusedWindowToMonitor(monitorIndex, win = getFocusWindow()) {
   if (!win || typeof win.move_to_monitor !== 'function') {
     return;
   }
@@ -314,10 +318,11 @@ function resolveWindowMonitor(win) {
  * @param {string} label Edge name used in error messages (e.g. 'top').
  * @param {(workArea: Meta.Rectangle) => {x: number, y: number, width: number,
  *   height: number}} computeRect Maps the monitor work area to the target rect.
+ * @param {Meta.Window|null} win Explicit target, defaulting to focus.
+ * @param {boolean} raise Whether to raise after tiling (interactive default).
  * @returns {void}
  */
-function tileFocusedWindowToRect(label, computeRect) {
-  const win = getFocusWindow();
+function tileFocusedWindowToRect(label, computeRect, win = getFocusWindow(), raise = true) {
   if (!canMoveResizeWindow(win)) {
     return;
   }
@@ -343,7 +348,7 @@ function tileFocusedWindowToRect(label, computeRect) {
       win.move_frame(true, x, y);
     }
     win.move_resize_frame(true, x, y, width, height);
-    raiseWindow(win);
+    if (raise) raiseWindow(win);
   } catch (error) {
     console.error(`monitor-window-hotkeys: failed to tile focused window ${label}: ${error}`);
   }
@@ -352,23 +357,27 @@ function tileFocusedWindowToRect(label, computeRect) {
 /**
  * Tile the focused window to the top half of its monitor's work area.
  *
+ * @param {Meta.Window|null} win Explicit target, defaulting to focus.
+ * @param {boolean} raise Whether to raise after tiling (interactive default).
  * @returns {void}
  */
-function tileFocusedWindowTopHalf() {
+function tileFocusedWindowTopHalf(win = getFocusWindow(), raise = true) {
   tileFocusedWindowToRect('top', (workArea) => ({
     x: workArea.x,
     y: workArea.y,
     width: workArea.width,
     height: Math.floor(workArea.height / 2),
-  }));
+  }), win, raise);
 }
 
 /**
  * Tile the focused window to the bottom half of its monitor's work area.
  *
+ * @param {Meta.Window|null} win Explicit target, defaulting to focus.
+ * @param {boolean} raise Whether to raise after tiling (interactive default).
  * @returns {void}
  */
-function tileFocusedWindowBottomHalf() {
+function tileFocusedWindowBottomHalf(win = getFocusWindow(), raise = true) {
   tileFocusedWindowToRect('bottom', (workArea) => {
     const halfHeight = Math.floor(workArea.height / 2);
     return {
@@ -377,15 +386,17 @@ function tileFocusedWindowBottomHalf() {
       width: workArea.width,
       height: halfHeight,
     };
-  });
+  }, win, raise);
 }
 
 /**
  * Tile the focused window to the left half of its monitor's work area.
  *
+ * @param {Meta.Window|null} win Explicit target, defaulting to focus.
+ * @param {boolean} raise Whether to raise after tiling (interactive default).
  * @returns {void}
  */
-function tileFocusedWindowLeftHalf() {
+function tileFocusedWindowLeftHalf(win = getFocusWindow(), raise = true) {
   tileFocusedWindowToRect('left', (workArea) => {
     const leftWidth = Math.floor(workArea.width / 2);
     return {
@@ -394,7 +405,7 @@ function tileFocusedWindowLeftHalf() {
       width: workArea.width - leftWidth,
       height: workArea.height,
     };
-  });
+  }, win, raise);
 }
 
 /**
@@ -402,9 +413,11 @@ function tileFocusedWindowLeftHalf() {
  *
  * Also invoked over D-Bus (TileRightHalf) by the Ctrl+Back tiler service.
  *
+ * @param {Meta.Window|null} win Explicit target, defaulting to focus.
+ * @param {boolean} raise Whether to raise after tiling (interactive default).
  * @returns {void}
  */
-function tileFocusedWindowRightHalf() {
+function tileFocusedWindowRightHalf(win = getFocusWindow(), raise = true) {
   tileFocusedWindowToRect('right', (workArea) => {
     const leftWidth = Math.floor(workArea.width / 2);
     return {
@@ -413,7 +426,39 @@ function tileFocusedWindowRightHalf() {
       width: workArea.width - leftWidth,
       height: workArea.height,
     };
-  });
+  }, win, raise);
+}
+
+/**
+ * Apply a whitelisted move/tile action to an X11 window without focus or raise.
+ * @param {string} windowId Decimal or hexadecimal XID (never a title or PID).
+ * @param {string} action Existing MoveToMonitorN or TileEdgeHalf method name.
+ * @returns {void} Throws for invalid targets/actions, so D-Bus callers can log failure.
+ */
+function performWindowAction(windowId, action) {
+  if (!/^(?:0x[0-9a-f]+|[0-9]+)$/i.test(windowId))
+    throw new Error('Invalid X11 window id');
+  const xid = Number(windowId);
+  // Mutter 46 exposes XIDs through get_description() as "0x...";
+  // native Wayland descriptions start with W and must never match an XID.
+  // See GNOME/mutter gnome-46 src/core/window.c: meta_window_update_desc.
+  const win = global.get_window_actors().map(actor => actor.get_meta_window())
+    .find(candidate => isUserWindow(candidate) &&
+      /^0x[0-9a-f]+$/i.test(candidate.get_description()) &&
+      Number(candidate.get_description()) === xid);
+  if (!xid || !win) throw new Error('X11 window not found');
+  const monitor = /^MoveToMonitor([1-6])$/.exec(action);
+  if (monitor) {
+    const index = Number(monitor[1]) - 1;
+    if (index >= global.display.get_n_monitors()) throw new Error('Monitor unavailable');
+    moveFocusedWindowToMonitor(index, win);
+  } else {
+    const tilers = {TileRightHalf: tileFocusedWindowRightHalf,
+      TileLeftHalf: tileFocusedWindowLeftHalf, TileTopHalf: tileFocusedWindowTopHalf,
+      TileBottomHalf: tileFocusedWindowBottomHalf};
+    if (!Object.hasOwn(tilers, action)) throw new Error('Unsupported window action');
+    tilers[action](win, false);
+  }
 }
 
 /**
@@ -622,10 +667,11 @@ export default class MonitorWindowHotkeysExtension extends Extension {
     };
 
     const dbusImplementation = {
-      TileRightHalf: tileFocusedWindowRightHalf,
-      TileLeftHalf: tileFocusedWindowLeftHalf,
-      TileTopHalf: tileFocusedWindowTopHalf,
-      TileBottomHalf: tileFocusedWindowBottomHalf,
+      PerformWindowAction: performWindowAction,
+      TileRightHalf: () => tileFocusedWindowRightHalf(),
+      TileLeftHalf: () => tileFocusedWindowLeftHalf(),
+      TileTopHalf: () => tileFocusedWindowTopHalf(),
+      TileBottomHalf: () => tileFocusedWindowBottomHalf(),
       MoveToMonitor1: () => moveFocusedWindowToMonitor(0),
       MoveToMonitor2: () => moveFocusedWindowToMonitor(1),
       MoveToMonitor3: () => moveFocusedWindowToMonitor(2),
@@ -676,7 +722,7 @@ export default class MonitorWindowHotkeysExtension extends Extension {
       this._settings,
       Meta.KeyBindingFlags.NONE,
       Shell.ActionMode.NORMAL,
-      tileFocusedWindowRightHalf,
+      () => tileFocusedWindowRightHalf(),
     );
     this._keybindings.push('tile-active-window-right-half');
 
