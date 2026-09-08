@@ -115,3 +115,9 @@ python3 -m pytest tests/ -q
 ├── installation_configs/{default,empty}.json
 └── tests/
 ```
+
+Scripted X11 placement can call `PerformWindowAction(windowId, action)` over the
+existing D-Bus interface. It accepts decimal/hex XIDs and `MoveToMonitor1`–`6`
+or `TileRightHalf`/`TileLeftHalf`/`TileTopHalf`/`TileBottomHalf`, without focusing,
+raising, or switching workspaces. Invalid targets fail without touching another
+window. Existing no-argument methods and interactive hotkeys retain their behavior.

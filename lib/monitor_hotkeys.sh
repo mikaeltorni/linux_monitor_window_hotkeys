@@ -86,16 +86,9 @@ monitor_hotkeys_default_for_index() {
 # Install the extension files, compile its schema, apply its system bindings, and
 # enable it. This is the core install: it does not depend on the captured
 # accelerators, so the extension is present and active with its schema defaults
-# even before monitor-move customization runs. Skipped on X11 (the extension
-# targets the Wayland session) and when glib-compile-schemas is unavailable.
+# even before monitor-move customization runs. Supports X11 and Wayland; skipped when glib-compile-schemas is unavailable.
 # Arguments: none. Returns: 0 on success or a documented skip; 1 on hard failure.
 install_monitor_extension_core() {
-  if [[ "${SESSION_TYPE:-}" =~ ^(x11|xorg)$ ]]; then
-    install_log_warn "X11 session detected; skipping monitor/window hotkeys extension"
-    msg "X11 session detected; skipping monitor/window hotkeys extension."
-    return 0
-  fi
-
   local ext_dir="$TARGET_HOME/.local/share/gnome-shell/extensions/$EXTENSION_ID"
   install_log_info "installing $EXTENSION_ID to $ext_dir"
   msg "Installing $EXTENSION_ID extension core"

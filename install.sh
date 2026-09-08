@@ -10,8 +10,7 @@
 # defaulted). Half-screen tiling accelerators come from the bundled schema.
 #
 # Runs sudo-free as the desktop user, and also through sudo (deriving the target
-# from SUDO_USER) for the clean-install chain. Targets the Wayland session; on
-# an X11 session the extension install is skipped with a message.
+# from SUDO_USER) for the clean-install chain. Supports both X11 and Wayland sessions.
 #
 # Components:
 #   - main(): resolve the target user, then route the component through the framework.
