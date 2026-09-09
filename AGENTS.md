@@ -38,12 +38,11 @@ degrades gracefully when the extension is absent, so this stays standalone.
 # Deployment safety
 
 GNOME desktop deployment safety is owned by the `linux-configuration` skill.
-Apply changes from the command line without a Shell reload: `gsettings`/schema
-changes take effect live or on next login, and `gnome-extensions enable` is
-dispatched detached/time-boxed so it can never block the installer. Never
-automate a GNOME Shell reload, logout, or `gnome-shell --replace` during
-install; if extension code needs a fresh Shell, deploy the files and report the
-manual re-login step.
+Apply settings and extension state changes through its silent mechanisms. For
+edited extension code, follow its session-specific activation procedure: use
+the sanctioned in-place `Alt+F2 r` reload on X11, or report the required manual
+logout/login on Wayland. Never use `gnome-shell --replace`, a shell kill, or a
+forced session termination during deployment.
 
 
 ## Mandatory programming guidelines prompt
