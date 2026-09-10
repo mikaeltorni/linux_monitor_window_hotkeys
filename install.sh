@@ -81,7 +81,6 @@ initialize_target_user() {
   RUNTIME_DIR="/run/user/$TARGET_UID"
   USER_BUS="unix:path=$RUNTIME_DIR/bus"
   DISPLAY_VAL="${DISPLAY:-:0}"
-  SESSION_TYPE="${SESSION_TYPE:-${XDG_SESSION_TYPE:-unknown}}"
 }
 
 # Resolve the target user, then route the selected components through the shared

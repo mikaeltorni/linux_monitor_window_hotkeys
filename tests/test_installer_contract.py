@@ -72,6 +72,11 @@ def test_gitignore_excludes_log_dir():
     assert ".log/" in (ROOT / ".gitignore").read_text(encoding="utf-8")
 
 
+def test_install_sh_does_not_keep_unused_session_type():
+    installer = (ROOT / "install.sh").read_text(encoding="utf-8")
+    assert "SESSION_TYPE=" not in installer
+
+
 def test_x11_clean_home_installs_current_extension_idempotently(tmp_path):
     """Copy real assets with desktop calls stubbed; X11 must not skip the API."""
     script = r'''set -eu
