@@ -16,6 +16,16 @@ SCHEMA = ROOT / "schemas" / "org.gnome.shell.extensions.monitor-window-hotkeys.g
 EXTENSION_JS = ROOT / "extension.js"
 
 
+def test_docs_describe_send_mode_and_x11_install():
+    """Send-mode lives here; the installer does not skip X11."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    assert "send-mode" in readme.lower() or "Super+U" in readme
+    assert "does not skip X11" in readme
+    assert "skips cleanly on X11" not in agents
+    assert "Do not reintroduce the legacy" not in agents
+
+
 def test_compiled_schema_is_not_tracked():
     """The installer compiles schemas on deploy; the repo must not ship a binary."""
     gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
