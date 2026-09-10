@@ -16,6 +16,14 @@ SCHEMA = ROOT / "schemas" / "org.gnome.shell.extensions.monitor-window-hotkeys.g
 EXTENSION_JS = ROOT / "extension.js"
 
 
+def test_compiled_schema_is_not_tracked():
+    """The installer compiles schemas on deploy; the repo must not ship a binary."""
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "schemas/gschemas.compiled" in gitignore
+    assert not (ROOT / "schemas" / "gschemas.compiled").exists() or \
+        "schemas/gschemas.compiled" in gitignore
+
+
 def test_metadata_identity_and_schema():
     meta = json.loads((ROOT / "metadata.json").read_text(encoding="utf-8"))
     assert meta["uuid"] == "monitor-window-hotkeys@local"

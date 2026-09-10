@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .log/
+schemas/gschemas.compiled
 target/
 dist/
 .cargo-container/
