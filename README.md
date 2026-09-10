@@ -11,15 +11,17 @@ extension. It provides keyboard shortcuts to:
 - a **D-Bus interface** (`TileRightHalf`, `TileLeftHalf`, …) used by the
   companion Ctrl+Back tiler service in
   [`linux_hotkey_setup`](https://github.com/mikaeltorni/linux_hotkey_setup) to
-  trigger tiling without keybindings.
+  trigger tiling without keybindings, and
+- **Super+U send-mode**: hold Super+U, then a configured workspace key, then
+  right-click a window to send it without switching workspaces. The key map is
+  configured by `linux_workspaces_setup`.
 
 This is the single, cleanest home for the extension. Pointer-driven window drag
 and resize live in
 [`linux_hotkey_window_tools`](https://github.com/mikaeltorni/linux_hotkey_window_tools)
-(`window-move-resize@local`); "move window to workspace N" is a native GNOME
-keybinding configured by `linux_hotkey_setup`. This repository owns only the
-monitor-move + half-tiling extension, so the same extension is no longer
-duplicated across the hotkey/workspace setup repositories.
+(`window-move-resize@local`); numbered switch/move accelerators stay in
+`linux_hotkey_setup`. The same extension is no longer duplicated across those
+repositories.
 
 ## Repository dependencies
 
@@ -50,10 +52,10 @@ chain). It copies the extension into
 `~/.local/share/gnome-shell/extensions/monitor-window-hotkeys@local`, compiles
 its schema, applies its system bindings (removing conflicting GNOME WM / Tiling
 Assistant defaults and setting the `<Super>` mouse-button modifier), and enables
-the extension. Targets the Wayland session; on an X11 session the install is
-skipped with a message.
+the extension. Supports both X11 and Wayland; it does not skip X11.
 
-Log out and back in if GNOME Shell has not picked up the extension.
+If GNOME Shell has not picked up edited extension code, use the sanctioned
+X11 `Alt+F2 r` reload, or log out and back in on Wayland.
 
 ### Options
 
