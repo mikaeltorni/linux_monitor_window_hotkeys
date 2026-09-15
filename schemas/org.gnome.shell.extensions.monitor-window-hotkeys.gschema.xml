@@ -38,7 +38,7 @@
       <summary>Tile focused window to the left half of its monitor</summary>
     </key>
     <key name="tile-active-window-right-half" type="as">
-      <default>['&lt;Control&gt;&lt;Super&gt;Right']</default>
+      <default>['&lt;Super&gt;Right']</default>
       <summary>Tile focused window to the right half of its monitor</summary>
     </key>
     <key name="send-window-to-workspace-mode" type="as">

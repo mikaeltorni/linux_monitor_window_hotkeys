@@ -4,7 +4,7 @@
 #
 # Compiles the bundled schema, resets the extension's own keys to their schema
 # defaults, removes conflicting GNOME WM and Tiling Assistant bindings for keys
-# the extension still owns (<Super>Up/Down for vertical half-tiling),
+# the extension still owns (<Super>Up/Down/Right for arrow-key half-tiling),
 # sets the Super mouse-button modifier, and enables both this extension and the
 # Tiling Assistant. Run as the target user; takes no arguments.
 set -euo pipefail

@@ -74,10 +74,11 @@ defaults.
 | Tile top half | `Super+Up`, `Ctrl+Super+X` |
 | Tile bottom half | `Ctrl+Super+W`, `Super+Down` |
 | Tile left half | `Ctrl+Super+C` |
-| Tile right half | `Ctrl+Super+Right` |
+| Tile right half | `Super+Right` |
 
 Among arrow keys, `Super+Up` and `Super+Down` tile by default (top and bottom
-halves). Left and right halves use the `Ctrl+Super` bindings above; the Ctrl+Back mouse
+halves), and `Super+Right` tiles to the right half. `Ctrl+Super+Right` remains
+available to Agent Command Center for terminal selection. The Ctrl+Back mouse
 tiler in `linux_hotkey_setup` can also trigger right-half tiling via D-Bus.
 
 ## Component contract
