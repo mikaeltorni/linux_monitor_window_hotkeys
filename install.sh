@@ -36,7 +36,7 @@ source "$SCRIPT_DIR/lib/bash_logging.sh"
 # Load the shared component framework + install-time helpers (single source of
 # truth in linux_installation_scripts_functions) before the install library,
 # which uses run_as_target/msg/need_cmd/is_root/apt_install. No vendored copy:
-# resolve a sibling checkout or download on demand so the installer still works
+# resolve a sibling checkout or clone on demand so the installer still works
 # standalone.
 for __isc_d in "${ISC_FUNCTIONS_DIR:-}" \
                "$SCRIPT_DIR/../linux_installation_scripts_functions" \
@@ -44,18 +44,36 @@ for __isc_d in "${ISC_FUNCTIONS_DIR:-}" \
   [ -n "$__isc_d" ] && [ -f "$__isc_d/component_loader.sh" ] && { source "$__isc_d/component_loader.sh"; break; }
 done
 if ! declare -F isc_load_helpers >/dev/null 2>&1; then
-  __isc_loader_url="https://raw.githubusercontent.com/mikaeltorni/linux_installation_scripts_functions/${ISC_FUNCTIONS_REF:-master}/component_loader.sh"
-  __isc_loader_tmp="$(mktemp)"
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$__isc_loader_url" -o "$__isc_loader_tmp"
-  elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$__isc_loader_tmp" "$__isc_loader_url"
-  else
-    printf 'ERROR: curl or wget is required to download the shared installer framework.\n' >&2
-    exit 1
+  __isc_framework_ref="${ISC_FUNCTIONS_REF:-master}"
+  __isc_framework_key="${__isc_framework_ref//\//_}"
+  __isc_framework_cache="${XDG_CACHE_HOME:-$HOME/.cache}/installation_scripts/framework-${__isc_framework_key}"
+  __isc_framework_loader="$__isc_framework_cache/component_loader.sh"
+  if [[ ! -f "$__isc_framework_loader" ]]; then
+    command -v git >/dev/null 2>&1 || {
+      install_log_error 'git is required to clone the shared installer framework'
+      printf 'ERROR: git is required to clone the shared installer framework.\n' >&2
+      exit 1
+    }
+    mkdir -p "${__isc_framework_cache%/*}"
+    __isc_framework_tmp="$(mktemp -d "${__isc_framework_cache%/*}/.framework-${__isc_framework_key}.XXXXXX")"
+    install_log_info "cloning shared installer framework ref $__isc_framework_ref for standalone installation"
+    if ! GIT_TERMINAL_PROMPT=0 git clone --quiet --depth 1 --single-branch \
+      --branch "$__isc_framework_ref" \
+      https://github.com/mikaeltorni/linux_installation_scripts_functions.git \
+      "$__isc_framework_tmp/repository"; then
+      install_log_error 'could not clone the shared installer framework; check GitHub access'
+      printf 'ERROR: could not clone the shared installer framework; check GitHub access.\n' >&2
+      exit 1
+    fi
+    if [[ ! -e "$__isc_framework_cache" ]] && mv "$__isc_framework_tmp/repository" "$__isc_framework_cache"; then
+      rmdir "$__isc_framework_tmp" 2>/dev/null || true
+    else
+      __isc_framework_loader="$__isc_framework_tmp/repository/component_loader.sh"
+    fi
   fi
-  source "$__isc_loader_tmp"
-  rm -f "$__isc_loader_tmp"
+  ISC_FUNCTIONS_DIR="${__isc_framework_loader%/*}"
+  export ISC_FUNCTIONS_DIR
+  source "$__isc_framework_loader"
 fi
 isc_load_helpers
 isc_activate_components

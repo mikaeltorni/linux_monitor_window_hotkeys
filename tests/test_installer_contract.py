@@ -16,7 +16,17 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def _run(args, home, extra_env=None):
-    env = {"HOME": str(home), "TARGET_HOME": str(home), "PATH": "/usr/bin:/bin"}
+    common = subprocess.check_output(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=ROOT, text=True,
+    ).strip()
+    framework = Path(common).parent.parent / "linux_installation_scripts_functions"
+    env = {
+        "ISC_FUNCTIONS_DIR": str(framework),
+        "HOME": str(home),
+        "TARGET_HOME": str(home),
+        "PATH": "/usr/bin:/bin",
+    }
     if extra_env:
         env.update(extra_env)
     return subprocess.run(
@@ -53,6 +63,13 @@ def test_install_sh_routes_probe_flags_and_uses_central_logging():
     assert 'source "$SCRIPT_DIR/lib/bash_logging.sh"' in install
     assert "component_main" in install
     assert "--list-components|--export-selection|--detect|--help|-h|--uninstall" in install
+
+
+def test_standalone_framework_bootstrap_clones_private_repository():
+    install = (ROOT / "install.sh").read_text(encoding="utf-8")
+    assert "GIT_TERMINAL_PROMPT=0 git clone" in install
+    assert 'ISC_FUNCTIONS_DIR="${__isc_framework_loader%/*}"' in install
+    assert "framework-${__isc_framework_key}" in install
 
 
 def test_lib_uses_centralized_logging_not_adhoc_helpers():
