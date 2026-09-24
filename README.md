@@ -27,7 +27,9 @@ This repository installs and runs **standalone**.
 
 - **Build-time (soft):** the shared installer component framework
   [`linux_installation_scripts_functions`](https://github.com/mikaeltorni/linux_installation_scripts_functions) —
-  loaded from a sibling checkout when present, otherwise downloaded on demand.
+  loaded from a sibling checkout when present, otherwise cloned from the private
+  framework repository into the user's cache. Standalone first use needs Git
+  access to that repository.
   It also provides the shared press-to-capture hotkey engine used to select the
   monitor-move accelerators.
 - **Consumer (soft, runtime):** `linux_hotkey_setup`'s Ctrl+Back tiler service
