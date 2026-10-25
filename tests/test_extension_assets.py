@@ -9,12 +9,29 @@ extension must not carry any of those keys or handlers.
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA = ROOT / "schemas" / "org.gnome.shell.extensions.monitor-window-hotkeys.gschema.xml"
 EXTENSION_JS = ROOT / "extension.js"
+
+
+def test_docs_describe_send_mode_and_x11_install():
+    """Send-mode lives here; the installer does not skip X11."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    assert "send-mode" in readme.lower() or "Super+U" in readme
+    assert "does not skip X11" in readme
+    assert "skips cleanly on X11" not in agents
+    assert "Do not reintroduce the legacy" not in agents
+
+
+def test_compiled_schema_is_not_tracked():
+    """The installer compiles schemas on deploy; the repo must not ship a binary."""
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "schemas/gschemas.compiled" in gitignore
+    assert not (ROOT / "schemas" / "gschemas.compiled").exists() or \
+        "schemas/gschemas.compiled" in gitignore
 
 
 def test_metadata_identity_and_schema():
@@ -75,21 +92,7 @@ def test_workspace_send_mode_is_present():
 
 def test_apply_bindings_references_deployed_strv_helper():
     apply = (ROOT / "apply-system-bindings.sh").read_text(encoding="utf-8")
-    assert "gsettings-strv.py" in apply
-    assert (ROOT / "gsettings-strv.py").is_file()
-
-
-def test_gsettings_strv_helper_append_and_remove():
-    helper = str(ROOT / "gsettings-strv.py")
-    out_add = subprocess.run(
-        ["python3", helper, "append", "monitor-window-hotkeys@local"],
-        env={"CURRENT": "['a']", "PATH": "/usr/bin:/bin"},
-        capture_output=True, text=True, check=True,
-    ).stdout.strip()
-    assert "monitor-window-hotkeys@local" in out_add and "'a'" in out_add
-    out_del = subprocess.run(
-        ["python3", helper, "remove", "monitor-window-hotkeys@local"],
-        env={"CURRENT": "['a', 'monitor-window-hotkeys@local']", "PATH": "/usr/bin:/bin"},
-        capture_output=True, text=True, check=True,
-    ).stdout.strip()
-    assert out_del == "['a']"
+    assert "gsettings-strv.py" not in apply
+    assert "gsettings_strv_bin" in apply
+    assert (ROOT / "src" / "gsettings_strv.rs").is_file()
+    assert (ROOT / "scripts" / "build_gsettings_strv.sh").is_file()

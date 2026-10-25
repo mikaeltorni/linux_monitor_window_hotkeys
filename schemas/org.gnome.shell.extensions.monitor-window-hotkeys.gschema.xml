@@ -30,15 +30,15 @@
       <summary>Tile focused window to the top half of its monitor</summary>
     </key>
     <key name="tile-active-window-bottom-half" type="as">
-      <default>['&lt;Control&gt;&lt;Super&gt;W']</default>
+      <default>['&lt;Control&gt;&lt;Super&gt;W', '&lt;Super&gt;Down']</default>
       <summary>Tile focused window to the bottom half of its monitor</summary>
     </key>
     <key name="tile-active-window-left-half" type="as">
-      <default>['&lt;Control&gt;&lt;Super&gt;C']</default>
+      <default>['&lt;Control&gt;&lt;Super&gt;C', '&lt;Super&gt;Left']</default>
       <summary>Tile focused window to the left half of its monitor</summary>
     </key>
     <key name="tile-active-window-right-half" type="as">
-      <default>['&lt;Control&gt;&lt;Super&gt;Right']</default>
+      <default>['&lt;Super&gt;Right']</default>
       <summary>Tile focused window to the right half of its monitor</summary>
     </key>
     <key name="send-window-to-workspace-mode" type="as">

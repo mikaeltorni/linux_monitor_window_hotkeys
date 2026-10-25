@@ -11,15 +11,17 @@ extension. It provides keyboard shortcuts to:
 - a **D-Bus interface** (`TileRightHalf`, `TileLeftHalf`, …) used by the
   companion Ctrl+Back tiler service in
   [`linux_hotkey_setup`](https://github.com/mikaeltorni/linux_hotkey_setup) to
-  trigger tiling without keybindings.
+  trigger tiling without keybindings, and
+- **Super+U send-mode**: hold Super+U, then a configured workspace key, then
+  right-click a window to send it without switching workspaces. The key map is
+  configured by `linux_workspaces_setup`.
 
 This is the single, cleanest home for the extension. Pointer-driven window drag
 and resize live in
 [`linux_hotkey_window_tools`](https://github.com/mikaeltorni/linux_hotkey_window_tools)
-(`window-move-resize@local`); "move window to workspace N" is a native GNOME
-keybinding configured by `linux_hotkey_setup`. This repository owns only the
-monitor-move + half-tiling extension, so the same extension is no longer
-duplicated across the hotkey/workspace setup repositories.
+(`window-move-resize@local`); numbered switch/move accelerators stay in
+`linux_hotkey_setup`. The same extension is no longer duplicated across those
+repositories.
 
 ## Repository dependencies
 
@@ -52,10 +54,10 @@ chain). It copies the extension into
 `~/.local/share/gnome-shell/extensions/monitor-window-hotkeys@local`, compiles
 its schema, applies its system bindings (removing conflicting GNOME WM / Tiling
 Assistant defaults and setting the `<Super>` mouse-button modifier), and enables
-the extension. Targets the Wayland session; on an X11 session the install is
-skipped with a message.
+the extension. Supports both X11 and Wayland; it does not skip X11.
 
-Log out and back in if GNOME Shell has not picked up the extension.
+If GNOME Shell has not picked up edited extension code, use the sanctioned
+X11 `Alt+F2 r` reload, or log out and back in on Wayland.
 
 ### Options
 
@@ -72,12 +74,13 @@ defaults.
 | Move window to monitor 3 | `Alt+Super+C` |
 | Move window to monitor 4 | *(unset — assign your own)* |
 | Tile top half | `Super+Up`, `Ctrl+Super+X` |
-| Tile bottom half | `Ctrl+Super+W` |
+| Tile bottom half | `Ctrl+Super+W`, `Super+Down` |
 | Tile left half | `Ctrl+Super+C` |
-| Tile right half | `Ctrl+Super+Right` |
+| Tile right half | `Super+Right` |
 
-Among arrow keys, only `Super+Up` tiles by default (top half). Bottom, left, and
-right halves use the `Ctrl+Super` letter bindings above; the Ctrl+Back mouse
+Among arrow keys, `Super+Up` and `Super+Down` tile by default (top and bottom
+halves), and `Super+Right` tiles to the right half. `Ctrl+Super+Right` remains
+available to Agent Command Center for terminal selection. The Ctrl+Back mouse
 tiler in `linux_hotkey_setup` can also trigger right-half tiling via D-Bus.
 
 ## Component contract
@@ -96,6 +99,7 @@ bash install.sh --uninstall monitor_window_hotkeys
 ## Tests
 
 ```bash
+cargo test
 python3 -m pytest tests/ -q
 ```
 
@@ -107,7 +111,7 @@ python3 -m pytest tests/ -q
 ├── extension.js                       # GNOME Shell extension (monitor-move + tiling + D-Bus)
 ├── metadata.json
 ├── apply-system-bindings.sh           # deployed: reset keys, drop conflicts, enable
-├── gsettings-strv.py                  # deployed: gsettings string-array helper
+├── src/                               # Rust gsettings-strv helper (built to dist/)
 ├── schemas/…monitor-window-hotkeys.gschema.xml
 ├── lib/
 │   ├── bash_logging.sh                # centralized best-effort install logging
@@ -116,3 +120,9 @@ python3 -m pytest tests/ -q
 ├── installation_configs/{default,empty}.json
 └── tests/
 ```
+
+Scripted X11 placement can call `PerformWindowAction(windowId, action)` over the
+existing D-Bus interface. It accepts decimal/hex XIDs and `MoveToMonitor1`–`6`
+or `TileRightHalf`/`TileLeftHalf`/`TileTopHalf`/`TileBottomHalf`, without focusing,
+raising, or switching workspaces. Invalid targets fail without touching another
+window. Existing no-argument methods and interactive hotkeys retain their behavior.

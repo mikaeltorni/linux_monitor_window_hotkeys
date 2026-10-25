@@ -2,3 +2,13 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .log/
+schemas/gschemas.compiled
+target/
+dist/
+.cargo-container/
+
+# BEGIN programming-prompts-cursor (managed by linux_programming_setup)
+# Managed copies from programming_prompts — do not ignore other .cursor/skills/*
+.cursor/skills/programming-prompts/
+.cursor/rules/programming-prompts-always-on.mdc
+# END programming-prompts-cursor
