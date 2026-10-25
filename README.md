@@ -30,6 +30,11 @@ This repository installs and runs **standalone**.
 - **Installer support:** the maintained MIT library is included in
   `.installer-support/`, with its license and verifiable source manifest.
   Framework discovery works offline without a private checkout or credentials.
+  The package also provides the shared press-to-capture hotkey engine for the
+  monitor-move accelerators.
+- **Consumer (soft, runtime):** `linux_hotkey_setup`'s Ctrl+Back tiler service
+  calls this extension's D-Bus tiling methods. When this extension is absent the
+  tiler simply has nothing to drive; nothing here requires `linux_hotkey_setup`.
 
 See the full cross-repository map in
 [installation_scripts/DEPENDENCIES.md](https://github.com/mikaeltorni/installation_scripts/blob/master/DEPENDENCIES.md).
