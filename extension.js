@@ -20,6 +20,7 @@
 import Shell from 'gi://Shell';
 import Meta from 'gi://Meta';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Clutter from 'gi://Clutter';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -530,13 +531,13 @@ function keyReleaseStopsWorkspaceSendMode(keyName) {
  * every key and pointer event to the grab actor instead. No-ops when already
  * active or when the grab cannot be acquired.
  *
- * @param {{active: boolean, targetWorkspace: ?number,
- *   suppressRightRelease: boolean, grab: ?object}} state Send-mode state.
- * @param {Clutter.Actor} eventActor Reactive grab-target actor.
- * @returns {void}
+ * Parameters: state - send-mode state; eventActor - reactive grab target.
+ * Returns: None.
  */
 function startWorkspaceSendMode(state, eventActor) {
+  print(`state=${state}, eventActor=${eventActor}`);
   if (!state || state.active || !eventActor) {
+    print(null);
     return;
   }
 
@@ -544,6 +545,7 @@ function startWorkspaceSendMode(state, eventActor) {
   if (grab.get_seat_state() !== Clutter.GrabState.ALL) {
     Main.popModal(grab);
     console.error('monitor-window-hotkeys: failed to grab input for workspace send mode');
+    print(null);
     return;
   }
 
@@ -552,6 +554,23 @@ function startWorkspaceSendMode(state, eventActor) {
   state.targetWorkspace = null;
   state.suppressRightRelease = false;
   global.stage.set_key_focus(eventActor);
+  /** Check whether Super is still held.
+   * Parameters: none.
+   * Returns: whether the timer continues.
+   */
+  state.watchdog = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 250, () => {
+    print('parameters=none');
+    const [, , modifiers] = global.get_pointer();
+    if (!(modifiers & (Clutter.ModifierType.SUPER_MASK | Clutter.ModifierType.MOD4_MASK))) {
+      state.watchdog = null;
+      stopWorkspaceSendMode(state);
+      print(GLib.SOURCE_REMOVE);
+      return GLib.SOURCE_REMOVE;
+    }
+    print(GLib.SOURCE_CONTINUE);
+    return GLib.SOURCE_CONTINUE;
+  });
+  print(null);
 }
 
 /**
@@ -559,13 +578,23 @@ function startWorkspaceSendMode(state, eventActor) {
  *
  * Safe to call when send mode is not active.
  *
- * @param {{active: boolean, targetWorkspace: ?number,
- *   suppressRightRelease: boolean, grab: ?object}|null} state Send-mode state.
- * @returns {void}
+ * Parameters: state - send-mode state or null.
+ * Returns: None.
  */
 function stopWorkspaceSendMode(state) {
+  print(`state=${state}`);
   if (!state) {
+    print(null);
     return;
+  }
+
+  if (state.pendingStop) {
+    GLib.source_remove(state.pendingStop);
+    state.pendingStop = null;
+  }
+  if (state.watchdog) {
+    GLib.source_remove(state.watchdog);
+    state.watchdog = null;
   }
 
   if (state.grab) {
@@ -577,19 +606,19 @@ function stopWorkspaceSendMode(state) {
   state.active = false;
   state.targetWorkspace = null;
   state.suppressRightRelease = false;
+  print(null);
 }
 
 /**
  * Handle captured events while Super+U workspace-send mode is active.
  *
- * @param {Clutter.Event} event Captured event.
- * @param {{active: boolean, targetWorkspace: ?number,
- *   suppressRightRelease: boolean, grab: ?object}} state Send-mode state.
- * @param {Gio.Settings} settings Extension settings.
- * @returns {number} Clutter.EVENT_STOP when the event was consumed.
+ * Parameters: event - captured event; state - send-mode state; settings - extension settings.
+ * Returns: the Clutter event propagation decision.
  */
 function handleWorkspaceSendModeEvent(event, state, settings) {
+  print(`event=${event}, state=${state}, settings=${settings}`);
   if (!state?.active) {
+    print(Clutter.EVENT_PROPAGATE);
     return Clutter.EVENT_PROPAGATE;
   }
 
@@ -600,6 +629,7 @@ function handleWorkspaceSendModeEvent(event, state, settings) {
     const targetMap = getWorkspaceSendModeTargetMap(settings);
     if (targetMap.has(keyName)) {
       state.targetWorkspace = targetMap.get(keyName);
+      print(Clutter.EVENT_STOP);
       return Clutter.EVENT_STOP;
     }
   }
@@ -609,24 +639,39 @@ function handleWorkspaceSendModeEvent(event, state, settings) {
     const targetMap = getWorkspaceSendModeTargetMap(settings);
 
     if (keyReleaseStopsWorkspaceSendMode(keyName)) {
-      stopWorkspaceSendMode(state);
+      state.active = false;
+      /** Release the grab outside event dispatch.
+       * Parameters: none.
+       * Returns: remove this idle source.
+       */
+      state.pendingStop = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+        print('parameters=none');
+        state.pendingStop = null;
+        stopWorkspaceSendMode(state);
+        print(GLib.SOURCE_REMOVE);
+        return GLib.SOURCE_REMOVE;
+      });
+      print(Clutter.EVENT_STOP);
       return Clutter.EVENT_STOP;
     }
 
     // Keep the selected target sticky so a single workspace-key press can be
     // followed by multiple right-click sends; just swallow the key release.
     if (targetMap.has(keyName)) {
+      print(Clutter.EVENT_STOP);
       return Clutter.EVENT_STOP;
     }
   }
 
   if (eventType === Clutter.EventType.BUTTON_PRESS && event.get_button() === 3) {
     if (state.targetWorkspace === null || state.targetWorkspace === undefined) {
+      print(Clutter.EVENT_PROPAGATE);
       return Clutter.EVENT_PROPAGATE;
     }
 
     moveWindowToWorkspace(getWindowUnderPointer(), state.targetWorkspace);
     state.suppressRightRelease = true;
+    print(Clutter.EVENT_STOP);
     return Clutter.EVENT_STOP;
   }
 
@@ -636,9 +681,11 @@ function handleWorkspaceSendModeEvent(event, state, settings) {
     && state.suppressRightRelease
   ) {
     state.suppressRightRelease = false;
+    print(Clutter.EVENT_STOP);
     return Clutter.EVENT_STOP;
   }
 
+  print(Clutter.EVENT_PROPAGATE);
   return Clutter.EVENT_PROPAGATE;
 }
 
