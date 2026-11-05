@@ -14,7 +14,9 @@ extension. It provides keyboard shortcuts to:
   trigger tiling without keybindings, and
 - **Super+U send-mode**: hold Super+U, then a configured workspace key, then
   right-click a window to send it without switching workspaces. The key map is
-  configured by `linux_workspaces_setup`.
+  configured by `linux_workspaces_setup`. Releasing U or Super ends the mode;
+  if a release event is missed, the input grab is also released when Super
+  is no longer held, restoring the normal workspace shortcuts.
 
 This is the single, cleanest home for the extension. Pointer-driven window drag
 and resize live in
