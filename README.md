@@ -1,9 +1,27 @@
-# Linux Monitor & Window Hotkeys
+# Linux Monitor & Window Hotkeys — GNOME monitor and tiling shortcuts
 
-> Part of [installation_scripts](https://github.com/mikaeltorni/installation_scripts) — a standalone **GNOME Shell extension** that moves the focused window to a numbered monitor, tiles it to screen halves, and exposes a D-Bus tiling interface. Tested on Ubuntu 24.04.4 LTS (GNOME 46, Wayland).
+Linux Monitor & Window Hotkeys is a GNOME monitor and tiling shortcuts extension for users
+who move windows between displays, screen halves, and workspaces.
 
-Standalone installer for the `monitor-window-hotkeys@local` GNOME Shell
-extension. It provides keyboard shortcuts to:
+[![Last commit](https://img.shields.io/github/last-commit/mikaeltorni/linux_monitor_window_hotkeys)](https://github.com/mikaeltorni/linux_monitor_window_hotkeys/commits/feat/super-up-only-tile)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/mikaeltorni/linux_monitor_window_hotkeys)](https://github.com/mikaeltorni/linux_monitor_window_hotkeys/graphs/commit-activity)
+[![Issues](https://img.shields.io/github/issues/mikaeltorni/linux_monitor_window_hotkeys)](https://github.com/mikaeltorni/linux_monitor_window_hotkeys/issues)
+
+[Installation](#install) · [Options](#options) · [Component contract](#component-contract) · [Tests](#tests) · [MIT license](LICENSE.md)
+
+## Quick start
+
+Run as the desktop user with GNOME Shell and the listed build prerequisites.
+
+```bash
+bash install.sh --list-components
+bash install.sh --select monitor_window_hotkeys
+bash install.sh --detect
+```
+
+The Ubuntu 24.04.5 GNOME 46 X11 workstation VM detected the installed extension and confirmed it was active.
+
+The `monitor-window-hotkeys@local` GNOME Shell extension provides shortcuts to:
 
 - **move the focused window to a numbered monitor** (up to 6 monitors; the first
   three ship defaults, the fourth is prompted/assignable),
@@ -38,8 +56,7 @@ This repository installs and runs **standalone**.
   calls this extension's D-Bus tiling methods. When this extension is absent the
   tiler simply has nothing to drive; nothing here requires `linux_hotkey_setup`.
 
-See the full cross-repository map in
-[installation_scripts/DEPENDENCIES.md](https://github.com/mikaeltorni/installation_scripts/blob/master/DEPENDENCIES.md).
+[Linux Workspaces Setup](https://github.com/mikaeltorni/linux_workspaces_setup) configures Super+U workspace mappings. [Ubuntu Hotkeys Setup](https://github.com/mikaeltorni/linux_hotkey_setup) owns numbered workspace shortcuts.
 
 ## Install
 
@@ -126,6 +143,28 @@ existing D-Bus interface. It accepts decimal/hex XIDs and `MoveToMonitor1`–`6`
 or `TileRightHalf`/`TileLeftHalf`/`TileTopHalf`/`TileBottomHalf`, without focusing,
 raising, or switching workspaces. Invalid targets fail without touching another
 window. Existing no-argument methods and interactive hotkeys retain their behavior.
+
+## GNOME monitor and tiling shortcuts FAQ
+
+### How do I move a window to another monitor?
+
+Focus the window and press the accelerator assigned to the numbered display. Use the `MONITOR_MOVE_1` through `MONITOR_MOVE_4` settings to override the first four shortcuts.
+
+### How do I send a window to a workspace without switching?
+
+Hold Super+U, hold its configured workspace key, then right-click the target window. The workspace key map is configured by Linux Workspaces Setup.
+
+### How can another tool trigger half-screen tiling?
+
+Call this extension’s D-Bus tiling interface for the requested screen half. Ubuntu Hotkeys Setup uses that interface for the pointer-driven tiler.
+
+### Does the installer support X11 and Wayland?
+
+The GNOME Shell extension installer supports both session types. For new extension code, follow the session-specific activation instructions.
+
+### How do I check the installed component?
+
+Run `bash install.sh --detect` from the checkout. It reports whether `monitor_window_hotkeys` is installed.
 
 ## Installer lifecycle
 
